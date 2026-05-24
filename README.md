@@ -25,6 +25,7 @@
 
 ## 🚀 Использование
 <img width="1785" height="96" alt="image" src="https://github.com/user-attachments/assets/0da1e4da-64d2-4062-9195-b5eccf27cef4" />
+<img width="1745" height="60" alt="image" src="https://github.com/user-attachments/assets/45903f6f-abb6-437c-91fa-b71709e71e42" />
 
 Теперь вы можете скачивать музыку.
 
