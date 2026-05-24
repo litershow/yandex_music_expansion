@@ -7,12 +7,18 @@
     "node": ">=15.13.0"
   },
   "scripts": {
-    "build": "set NODE_OPTIONS=--openssl-legacy-provider&& webpack --mode=production --node-env=production",
+    "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider webpack --mode=production --node-env=production",
+    "build:watch": "cross-env NODE_OPTIONS=--openssl-legacy-provider webpack --mode=development --watch",
     "lint": "gts lint",
     "clean": "gts clean",
     "fix": "gts fix",
-    "build:dev": "set NODE_OPTIONS=--openssl-legacy-provider&& webpack --mode=development",
-    "build:prod": "set NODE_OPTIONS=--openssl-legacy-provider&& webpack --mode=production --node-env=production"
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck && npm run build",
+    "ci": "npm run check",
+    "archive": "node ./scripts/package-build.js",
+    "package:build": "npm run build && npm run archive",
+    "build:dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider webpack --mode=development",
+    "build:prod": "cross-env NODE_OPTIONS=--openssl-legacy-provider webpack --mode=production --node-env=production"
   },
   "keywords": [],
   "author": "Daniil Zhdanovich",
@@ -25,6 +31,7 @@
     "@types/node": "15.12.4",
     "babel-loader": "8.2.2",
     "copy-webpack-plugin": "9.0.0",
+    "cross-env": "7.0.3",
     "css-loader": "5.2.6",
     "eslint": "7.29.0",
     "gts": "3.1.0",

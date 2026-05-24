@@ -10,6 +10,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: --openssl-legacy-provider
     
     steps:
       - name: Checkout code
@@ -21,28 +23,12 @@ jobs:
           node-version: '20'
       
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       
-      - name: Build extension
-        run: npm run build
-      
-      - name: List build folder (for debugging)
-        run: ls -la dist/ || ls -la build/ || echo "No dist or build folder found"
-      
-      - name: Create ZIP from build folder
-        run: |
-          if [ -d "dist" ]; then
-            cd dist
-            zip -r ../extension.zip .
-          elif [ -d "build" ]; then
-            cd build
-            zip -r ../extension.zip .
-          else
-            echo "Neither dist nor build folder exists!"
-            exit 1
-          fi
+      - name: Build extension archive
+        run: npm run package:build
       
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: extension.zip
+          files: release/*.zip

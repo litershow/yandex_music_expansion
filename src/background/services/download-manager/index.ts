@@ -52,12 +52,15 @@ export class DownloadManager implements IDownloadManager {
     const rawData: Buffer[] = [];
 
     try {
-      while (true) {
-        const {done, value} = await reader.read();
-        if (done) break;
-        if (!value) continue;
+      let done = false;
 
-        const chunk = Buffer.from(value);
+      while (!done) {
+        const chunkResult = await reader.read();
+        done = chunkResult.done;
+
+        if (done || !chunkResult.value) continue;
+
+        const chunk = Buffer.from(chunkResult.value);
         rawData.push(chunk);
         callback(chunk.byteLength, totalBytes, closeConnection);
       }

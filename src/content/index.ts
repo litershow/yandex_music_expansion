@@ -8,7 +8,6 @@ const PLAYER_ROOT_SELECTOR = [
   '.player-controls',
 ].join(', ');
 
-
 type TrackMeta = {
   title?: string;
   album?: string;
@@ -32,116 +31,80 @@ const locale = (() => {
   return domains[domains.length - 1];
 })();
 
-const OAUTH_REDIRECT_URI =
-  `${window.location.origin}/oauth`;
+const OAUTH_REDIRECT_URI = `${window.location.origin}/oauth`;
 
 const PAGE_REQUEST_SOURCE = 'YMD_CONTENT';
 const PAGE_RESPONSE_SOURCE = 'YMD_PAGE';
 
-const FETCH_TRACK_DATA =
-  'FETCH_TRACK_DATA';
+const FETCH_TRACK_DATA = 'FETCH_TRACK_DATA';
 
-const FETCH_TRACK_DATA_RESULT =
-  'FETCH_TRACK_DATA_RESULT';
+const FETCH_TRACK_DATA_RESULT = 'FETCH_TRACK_DATA_RESULT';
 
 let oauthTokenCache = '';
 let oauthClientIdCache = '';
 
 let lastErrorMessage = '';
 
-let pendingDownloadAction:
-  | (() => void)
-  | null = null;
+let pendingDownloadAction: (() => void) | null = null;
 
-let port: chrome.runtime.Port | null =
-  null;
+let port: chrome.runtime.Port | null = null;
 
 /**
  * STORAGE
  */
 
-chrome.storage.local.get(
-  ['oauthToken', 'oauthClientId'],
-  localItems => {
-    oauthTokenCache =
-      localItems.oauthToken ?? '';
+chrome.storage.local.get(['oauthToken', 'oauthClientId'], localItems => {
+  oauthTokenCache = localItems.oauthToken ?? '';
 
-    oauthClientIdCache =
-      localItems.oauthClientId ?? '';
+  oauthClientIdCache = localItems.oauthClientId ?? '';
 
-    chrome.storage.sync.get(
-      ['oauthToken', 'oauthClientId'],
-      syncItems => {
-        if (!oauthTokenCache) {
-          oauthTokenCache =
-            syncItems.oauthToken ?? '';
-        }
+  chrome.storage.sync.get(['oauthToken', 'oauthClientId'], syncItems => {
+    if (!oauthTokenCache) {
+      oauthTokenCache = syncItems.oauthToken ?? '';
+    }
 
-        if (!oauthClientIdCache) {
-          oauthClientIdCache =
-            syncItems.oauthClientId ??
-            '';
-        }
-      }
-    );
+    if (!oauthClientIdCache) {
+      oauthClientIdCache = syncItems.oauthClientId ?? '';
+    }
+  });
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (!['local', 'sync'].includes(areaName)) {
+    return;
   }
-);
 
-chrome.storage.onChanged.addListener(
-  (changes, areaName) => {
-    if (
-      !['local', 'sync'].includes(
-        areaName
-      )
-    ) {
-      return;
-    }
-
-    if (changes.oauthToken) {
-      oauthTokenCache =
-        changes.oauthToken.newValue ??
-        '';
-    }
-
-    if (changes.oauthClientId) {
-      oauthClientIdCache =
-        changes.oauthClientId.newValue ??
-        '';
-    }
-
-    if (
-      oauthTokenCache &&
-      pendingDownloadAction
-    ) {
-      const action =
-        pendingDownloadAction;
-
-      pendingDownloadAction = null;
-
-      window.setTimeout(() => {
-        action();
-      }, 500);
-    }
+  if (changes.oauthToken) {
+    oauthTokenCache = changes.oauthToken.newValue ?? '';
   }
-);
+
+  if (changes.oauthClientId) {
+    oauthClientIdCache = changes.oauthClientId.newValue ?? '';
+  }
+
+  if (oauthTokenCache && pendingDownloadAction) {
+    const action = pendingDownloadAction;
+
+    pendingDownloadAction = null;
+
+    window.setTimeout(() => {
+      action();
+    }, 500);
+  }
+});
 
 /**
  * HELPERS
  */
 
-const showDownloadError = (
-  message: string
-) => {
+const showDownloadError = (message: string) => {
   if (!message) return;
 
-  if (lastErrorMessage === message)
-    return;
+  if (lastErrorMessage === message) return;
 
   lastErrorMessage = message;
 
-  window.alert(
-    `Ошибка загрузки: ${message}`
-  );
+  window.alert(`Ошибка загрузки: ${message}`);
 
   window.setTimeout(() => {
     if (lastErrorMessage === message) {
@@ -153,13 +116,8 @@ const showDownloadError = (
 const showInfo = (message: string) => {
   if (!message) return;
 
-  if (
-    window.location.pathname ===
-    '/oauth'
-  ) {
-    window.alert(
-      'После авторизации вернитесь в Яндекс Музыку.'
-    );
+  if (window.location.pathname === '/oauth') {
+    window.alert('После авторизации вернитесь в Яндекс Музыку.');
 
     return;
   }
@@ -171,9 +129,7 @@ const showInfo = (message: string) => {
  * CLIENT ID
  */
 
-const saveClientId = async (
-  clientId: string
-) => {
+const saveClientId = async (clientId: string) => {
   oauthClientIdCache = clientId;
 
   await chrome.storage.local.set({
@@ -185,82 +141,60 @@ const saveClientId = async (
   });
 };
 
-const extractClientId =
-  (): string | null => {
-    const scripts = Array.from(
-      document.scripts
-    );
+const extractClientId = (): string | null => {
+  const scripts = Array.from(document.scripts);
 
-    const patterns = [
-      /client_id["']?\s*:\s*["']([a-zA-Z0-9]+)["']/i,
-      /clientId["']?\s*:\s*["']([a-zA-Z0-9]+)["']/i,
-      /"client_id":"([a-zA-Z0-9]+)"/i,
-      /"clientId":"([a-zA-Z0-9]+)"/i,
-    ];
+  const patterns = [
+    /client_id["']?\s*:\s*["']([a-zA-Z0-9]+)["']/i,
+    /clientId["']?\s*:\s*["']([a-zA-Z0-9]+)["']/i,
+    /"client_id":"([a-zA-Z0-9]+)"/i,
+    /"clientId":"([a-zA-Z0-9]+)"/i,
+  ];
 
-    for (const script of scripts) {
-      const content =
-        script.textContent || '';
+  for (const script of scripts) {
+    const content = script.textContent || '';
 
-      for (const pattern of patterns) {
-        const match =
-          content.match(pattern);
+    for (const pattern of patterns) {
+      const match = content.match(pattern);
 
-        if (match?.[1]) {
-          return match[1];
-        }
+      if (match?.[1]) {
+        return match[1];
       }
     }
+  }
 
-    return null;
-  };
+  return null;
+};
 
-const resolveOauthClientId =
-  async (): Promise<string> => {
-    if (oauthClientIdCache) {
-      return oauthClientIdCache;
-    }
+const resolveOauthClientId = async (): Promise<string> => {
+  if (oauthClientIdCache) {
+    return oauthClientIdCache;
+  }
 
-    let clientId =
-      extractClientId();
+  let clientId = extractClientId();
 
-    if (!clientId) {
-      clientId =
-        '97fe03033fa34407ac9bcf91d5afed5b';
-    }
+  if (!clientId) {
+    clientId = '97fe03033fa34407ac9bcf91d5afed5b';
+  }
 
-    await saveClientId(clientId);
+  await saveClientId(clientId);
 
-    return clientId;
-  };
+  return clientId;
+};
 
 /**
  * PORT
  */
 
-const handlePortMessage = (
-  message: ChromeMessage
-) => {
-  if (
-    message.type ===
-    ChromeMessageType.ERROR_EVENT
-  ) {
-    showDownloadError(
-      message.error.message ||
-        'Неизвестная ошибка'
-    );
+const handlePortMessage = (message: ChromeMessage) => {
+  if (message.type === ChromeMessageType.ERROR_EVENT) {
+    showDownloadError(message.error.message || 'Неизвестная ошибка');
 
     return;
   }
 
-  if (
-    message.type ===
-    ChromeMessageType.DOWNLOAD_ERROR_EVENT
-  ) {
-    showDownloadError(
-      message.error.message ||
-        'Ошибка скачивания'
-    );
+  if (message.type === ChromeMessageType.DOWNLOAD_ERROR_EVENT) {
+    showDownloadError(message.error.message || 'Ошибка скачивания');
   }
 };
 
@@ -271,25 +205,20 @@ const getPort = () => {
     name: locale,
   });
 
-  port.onMessage.addListener(
-    handlePortMessage
-  );
+  port.onMessage.addListener(handlePortMessage);
 
   port.onDisconnect.addListener(() => {
     port = null;
   });
 
   port.postMessage({
-    type:
-      ChromeMessageType.ADD_ERROR_LISTENER,
+    type: ChromeMessageType.ADD_ERROR_LISTENER,
   });
 
   return port;
 };
 
-const postToPort = (
-  message: ChromeMessage
-) => {
+const postToPort = (message: ChromeMessage) => {
   try {
     getPort().postMessage(message);
   } catch (_error) {
@@ -304,21 +233,13 @@ const postToPort = (
  */
 
 const injectPageBridge = () => {
-  if (
-    document.querySelector(
-      'script[data-ymd-page-bridge="1"]'
-    )
-  ) {
+  if (document.querySelector('script[data-ymd-page-bridge="1"]')) {
     return;
   }
 
-  const script =
-    document.createElement('script');
+  const script = document.createElement('script');
 
-  script.src =
-    chrome.runtime.getURL(
-      'page-bridge.js'
-    );
+  script.src = chrome.runtime.getURL('page-bridge.js');
 
   script.dataset.ymdPageBridge = '1';
 
@@ -326,172 +247,111 @@ const injectPageBridge = () => {
     script.remove();
   };
 
-  (
-    document.head ||
-    document.documentElement
-  ).append(script);
+  (document.head || document.documentElement).append(script);
 };
 
-const requestPageTrackData = (
-  trackId: number,
-  oauthToken: string
-) => {
+const requestPageTrackData = (trackId: number, oauthToken: string) => {
   injectPageBridge();
 
   const requestId = `ymd-${trackId}-${Date.now()}`;
 
-  return new Promise<ResolvedTrackPayload>(
-    (resolve, reject) => {
-      const timeoutId =
-        window.setTimeout(() => {
-          window.removeEventListener(
-            'message',
-            onMessage
-          );
+  return new Promise<ResolvedTrackPayload>((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      window.removeEventListener('message', onMessage);
 
-          reject(
-            new Error(
-              'Track fetch timeout'
-            )
-          );
-        }, 10000);
+      reject(new Error('Track fetch timeout'));
+    }, 10000);
 
-      const onMessage = (
-        event: MessageEvent
-      ) => {
-        if (event.source !== window)
-          return;
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== window) return;
 
-        const data = event.data;
+      const data = event.data;
 
-        if (
-          !data ||
-          data.source !==
-            PAGE_RESPONSE_SOURCE
-        ) {
-          return;
-        }
+      if (!data || data.source !== PAGE_RESPONSE_SOURCE) {
+        return;
+      }
 
-        if (
-          data.type !==
-          FETCH_TRACK_DATA_RESULT
-        ) {
-          return;
-        }
+      if (data.type !== FETCH_TRACK_DATA_RESULT) {
+        return;
+      }
 
-        if (
-          data.requestId !== requestId
-        ) {
-          return;
-        }
+      if (data.requestId !== requestId) {
+        return;
+      }
 
-        window.clearTimeout(timeoutId);
+      window.clearTimeout(timeoutId);
 
-        window.removeEventListener(
-          'message',
-          onMessage
-        );
+      window.removeEventListener('message', onMessage);
 
-        if (data.error) {
-          reject(
-            new Error(String(data.error))
-          );
+      if (data.error) {
+        reject(new Error(String(data.error)));
 
-          return;
-        }
+        return;
+      }
 
-        resolve(
-          data.payload as ResolvedTrackPayload
-        );
-      };
+      resolve(data.payload as ResolvedTrackPayload);
+    };
 
-      window.addEventListener(
-        'message',
-        onMessage
-      );
+    window.addEventListener('message', onMessage);
 
-      window.postMessage(
-        {
-          source: PAGE_REQUEST_SOURCE,
-          type: FETCH_TRACK_DATA,
-          requestId,
-          trackId,
-          oauthToken,
-        },
-        window.location.origin
-      );
-    }
-  );
+    window.postMessage(
+      {
+        source: PAGE_REQUEST_SOURCE,
+        type: FETCH_TRACK_DATA,
+        requestId,
+        trackId,
+        oauthToken,
+      },
+      window.location.origin
+    );
+  });
 };
 
 /**
  * AUTH
  */
 
-const captureOauthTokenFromHash =
-  async () => {
-    const hash =
-      window.location.hash.replace(
-        /^#/u,
-        ''
-      );
+const captureOauthTokenFromHash = async () => {
+  const hash = window.location.hash.replace(/^#/u, '');
 
-    if (!hash) return;
+  if (!hash) return;
 
-    const params =
-      new URLSearchParams(hash);
+  const params = new URLSearchParams(hash);
 
-    const token =
-      params.get('access_token');
+  const token = params.get('access_token');
 
-    if (!token) return;
+  if (!token) return;
 
-    oauthTokenCache = token;
+  oauthTokenCache = token;
 
-    await chrome.storage.local.set({
-      oauthToken: token,
-    });
+  await chrome.storage.local.set({
+    oauthToken: token,
+  });
 
-    await chrome.storage.sync.set({
-      oauthToken: token,
-    });
+  await chrome.storage.sync.set({
+    oauthToken: token,
+  });
 
-    const storage = await new Promise<{
-      oauthReturnUrl?: string;
-    }>(resolve => {
-      chrome.storage.local.get(
-        ['oauthReturnUrl'],
-        items => resolve(items)
-      );
-    });
+  const storage = await new Promise<{
+    oauthReturnUrl?: string;
+  }>(resolve => {
+    chrome.storage.local.get(['oauthReturnUrl'], items => resolve(items));
+  });
 
-    const returnUrl =
-      storage.oauthReturnUrl;
+  const returnUrl = storage.oauthReturnUrl;
 
-    if (
-      returnUrl &&
-      returnUrl.includes(
-        'music.yandex'
-      )
-    ) {
-      await chrome.storage.local.remove(
-        'oauthReturnUrl'
-      );
+  if (returnUrl && returnUrl.includes('music.yandex')) {
+    await chrome.storage.local.remove('oauthReturnUrl');
 
-      window.location.href =
-        returnUrl;
+    window.location.href = returnUrl;
 
-      return;
-    }
+    return;
+  }
 
-    showInfo(
-      'Авторизация завершена.'
-    );
-  };
+  showInfo('Авторизация завершена.');
+};
 
-const ensureOauthToken = async (
-  action: () => void
-): Promise<boolean> => {
+const ensureOauthToken = async (action: () => void): Promise<boolean> => {
   if (oauthTokenCache) {
     return true;
   }
@@ -502,29 +362,20 @@ const ensureOauthToken = async (
     oauthReturnUrl: window.location.href,
   });
 
-  const clientId =
-    await resolveOauthClientId();
+  const clientId = await resolveOauthClientId();
 
-  const params =
-    new URLSearchParams();
+  const params = new URLSearchParams();
 
-  params.set(
-    'response_type',
-    'token'
-  );
+  params.set('response_type', 'token');
 
-  params.set(
-    'client_id',
-    clientId
-  );
+  params.set('client_id', clientId);
 
-  params.set(
-    'redirect_uri',
-    OAUTH_REDIRECT_URI
-  );
+  params.set('redirect_uri', OAUTH_REDIRECT_URI);
 
-  window.location.href =
-    `https://oauth.yandex.ru/authorize?${params.toString()}`;
+  const oauthUrl = new URL('https://oauth.yandex.ru/authorize');
+  oauthUrl.search = params.toString();
+
+  window.location.href = oauthUrl.toString();
 
   return false;
 };
@@ -539,57 +390,36 @@ const requestTrackDownload = (
   resolvedTrack?: ResolvedTrackPayload
 ) => {
   postToPort({
-    type:
-      ChromeMessageType.DOWNLOAD_TRACK,
+    type: ChromeMessageType.DOWNLOAD_TRACK,
     trackId,
     trackMeta,
     resolvedTrack,
   });
 };
 
-
-const downloadTrack = (
-  trackId: number,
-  trackMeta?: TrackMeta
-) => {
+const downloadTrack = (trackId: number, trackMeta?: TrackMeta) => {
   const action = () => {
     void (async () => {
       try {
-        const resolvedTrack =
-          await requestPageTrackData(
-            trackId,
-            oauthTokenCache
-          );
-
-        console.log(
-          'track',
+        const resolvedTrack = await requestPageTrackData(
           trackId,
-          resolvedTrack
+          oauthTokenCache
         );
 
-        requestTrackDownload(
-          trackId,
-          trackMeta,
-          resolvedTrack
-        );
+        console.log('track', trackId, resolvedTrack);
+
+        requestTrackDownload(trackId, trackMeta, resolvedTrack);
       } catch (error) {
         console.error(error);
 
         // fallback
-        requestTrackDownload(
-          trackId,
-          trackMeta
-        );
+        requestTrackDownload(trackId, trackMeta);
       }
     })();
   };
 
   void (async () => {
-    if (
-      !(await ensureOauthToken(
-        action
-      ))
-    ) {
+    if (!(await ensureOauthToken(action))) {
       return;
     }
 
@@ -597,13 +427,9 @@ const downloadTrack = (
   })();
 };
 
-
 void captureOauthTokenFromHash();
 
-if (
-  window.location.pathname ===
-  '/oauth'
-) {
+if (window.location.pathname === '/oauth') {
   throw new Error('OAuth redirect handled');
 }
 
@@ -672,7 +498,6 @@ const parseTrackIdFromHref = (href: string) => {
   return match ? +match[1] : null;
 };
 
-
 const getTrackMeta = (element: ParentNode, trackId: number): TrackMeta => {
   const links = element.querySelectorAll<HTMLAnchorElement>('a[href]');
   let title = '';
@@ -739,27 +564,16 @@ const createIconButton = (
   return button;
 };
 
-const createTrackActionButton = (
-  trackId: number,
-  trackMeta?: TrackMeta
-) => {
+const createTrackActionButton = (trackId: number, trackMeta?: TrackMeta) => {
   const button = createIconButton(
     ['YMD-track-action-button'],
     'Скачать трек',
-    () =>
-      downloadTrack(
-        trackId,
-        trackMeta
-      )
+    () => downloadTrack(trackId, trackMeta)
   );
 
-  button.dataset.ymdTrackId =
-    String(trackId);
+  button.dataset.ymdTrackId = String(trackId);
 
-  button.setAttribute(
-    'aria-label',
-    'Скачать трек'
-  );
+  button.setAttribute('aria-label', 'Скачать трек');
 
   return button;
 };
@@ -774,13 +588,13 @@ const isSupportedTrackLink = (link: HTMLAnchorElement) => {
 };
 
 const addInlineTrackButtons = () => {
-  const links = document.querySelectorAll<HTMLAnchorElement>(
-    'a[href*="/track/"]'
-  );
+  const links =
+    document.querySelectorAll<HTMLAnchorElement>('a[href*="/track/"]');
 
   links.forEach(link => {
     if (!isSupportedTrackLink(link)) return;
-    if (link.nextElementSibling?.classList.contains('YMD-inline-button')) return;
+    if (link.nextElementSibling?.classList.contains('YMD-inline-button'))
+      return;
 
     const href = link.getAttribute('href');
     if (!href) return;
@@ -789,10 +603,8 @@ const addInlineTrackButtons = () => {
     if (!trackId) return;
     const trackMeta = getTrackMeta(link.parentElement || document, trackId);
 
-    const button = createIconButton(
-      ['YMD-inline-button'],
-      'Скачать трек',
-      () => downloadTrack(trackId, trackMeta)
+    const button = createIconButton(['YMD-inline-button'], 'Скачать трек', () =>
+      downloadTrack(trackId, trackMeta)
     );
 
     button.dataset.ymdTrackId = String(trackId);
@@ -809,9 +621,8 @@ const findTrackControlsBar = (trackRow: Element) => {
 };
 
 const addTrackRowButtons = () => {
-  const links = document.querySelectorAll<HTMLAnchorElement>(
-    'a[href*="/track/"]'
-  );
+  const links =
+    document.querySelectorAll<HTMLAnchorElement>('a[href*="/track/"]');
 
   links.forEach(link => {
     const href = link.getAttribute('href');
@@ -848,36 +659,25 @@ const addTrackRowButtons = () => {
 
 const getCurrentPlayerTrackId = () => {
   // Новый UI
-  const player =
-    document.querySelector<HTMLElement>(
-      PLAYER_ROOT_SELECTOR
-    );
+  const player = document.querySelector<HTMLElement>(PLAYER_ROOT_SELECTOR);
 
   if (player) {
     const links =
-      player.querySelectorAll<HTMLAnchorElement>(
-        'a[href*="/track/"]'
-      );
+      player.querySelectorAll<HTMLAnchorElement>('a[href*="/track/"]');
 
-    let foundTrackId: number | null =
-      null;
+    let foundTrackId: number | null = null;
 
     links.forEach(link => {
       if (foundTrackId) return;
 
-      const href =
-        link.getAttribute('href');
+      const href = link.getAttribute('href');
 
       if (!href) return;
 
-      const trackId =
-        parseTrackIdFromHref(href);
+      const trackId = parseTrackIdFromHref(href);
 
       if (trackId) {
-        console.log(
-          'PLAYER TRACK:',
-          trackId
-        );
+        console.log('PLAYER TRACK:', trackId);
 
         foundTrackId = trackId;
       }
@@ -889,92 +689,58 @@ const getCurrentPlayerTrackId = () => {
   }
 
   // Старый UI
-  const legacyTrackLink =
-    document.querySelector<HTMLAnchorElement>(
-      '.player-controls .track__name a'
-    );
+  const legacyTrackLink = document.querySelector<HTMLAnchorElement>(
+    '.player-controls .track__name a'
+  );
 
-  const legacyHref =
-    legacyTrackLink?.getAttribute(
-      'href'
-    );
+  const legacyHref = legacyTrackLink?.getAttribute('href');
 
   if (!legacyHref) return null;
 
-  return parseTrackIdFromHref(
-    legacyHref
-  );
+  return parseTrackIdFromHref(legacyHref);
 };
 
+const removeElement = (selector: string) => {
+  document.querySelector(selector)?.remove();
+};
 
+const syncPlayerButton = () => {
+  const trackId = getCurrentPlayerTrackId();
 
-  const removeElement = (selector: string) => {
-    document.querySelector(selector)?.remove();
-  };
-
-  const syncPlayerButton = () => {
-    const trackId =
-      getCurrentPlayerTrackId();
-      
   if (!trackId) {
-    removeElement(
-      '.YMD-floating-player-button'
-    );
+    removeElement('.YMD-floating-player-button');
 
     return;
   }
 
-  const existingButton =
-    document.querySelector<HTMLButtonElement>(
-      '.YMD-floating-player-button'
-    );
+  const existingButton = document.querySelector<HTMLButtonElement>(
+    '.YMD-floating-player-button'
+  );
 
   // если кнопка уже существует
   // и трек не поменялся
   // ничего не делаем
-  if (
-    existingButton &&
-    existingButton.dataset.ymdTrackId ===
-      String(trackId)
-  ) {
+  if (existingButton && existingButton.dataset.ymdTrackId === String(trackId)) {
     return;
   }
 
-  removeElement(
-    '.YMD-floating-player-button'
-  );
+  removeElement('.YMD-floating-player-button');
 
-  const playerRoot =
-    document.querySelector(
-      PLAYER_ROOT_SELECTOR
-    ) || document;
+  const playerRoot = document.querySelector(PLAYER_ROOT_SELECTOR) || document;
 
-  const trackMeta = getTrackMeta(
-    playerRoot,
-    trackId
-  );
+  const trackMeta = getTrackMeta(playerRoot, trackId);
 
   const button = createIconButton(
-    [
-      'YMD-floating-button',
-      'YMD-floating-player-button',
-    ],
+    ['YMD-floating-button', 'YMD-floating-player-button'],
     'Скачать текущий трек',
     () => {
-      console.log(
-        'DOWNLOAD CURRENT TRACK',
-        trackId
-      );
+      console.log('DOWNLOAD CURRENT TRACK', trackId);
 
-      downloadTrack(
-        trackId,
-        trackMeta
-      );
+      downloadTrack(trackId, trackMeta);
     }
   );
 
-  button.dataset.ymdTrackId =
-    String(trackId);
+  button.dataset.ymdTrackId = String(trackId);
 
   button.style.position = 'fixed';
   button.style.right = '200px';
@@ -983,7 +749,6 @@ const getCurrentPlayerTrackId = () => {
 
   document.body.append(button);
 };
-
 
 const syncContent = () => {
   addTrackRowButtons();

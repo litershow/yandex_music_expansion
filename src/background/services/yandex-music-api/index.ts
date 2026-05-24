@@ -103,7 +103,8 @@ export class YandexMusicAPI implements IYandexMusicAPI {
         ...init?.headers,
         ...(body
           ? {
-              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+              'Content-Type':
+                'application/x-www-form-urlencoded; charset=UTF-8',
             }
           : {}),
       },
@@ -112,7 +113,7 @@ export class YandexMusicAPI implements IYandexMusicAPI {
 
     const rawPayload = await response.text();
     const payload = rawPayload
-      ? ((JSON.parse(rawPayload) as ApiResponse<T> | T))
+      ? (JSON.parse(rawPayload) as ApiResponse<T> | T)
       : null;
 
     if (!response.ok) {
@@ -246,17 +247,21 @@ export class YandexMusicAPI implements IYandexMusicAPI {
     const trackIds: number[] = [];
     let page = 0;
 
-    while (true) {
+    let hasMore = true;
+
+    while (hasMore) {
       const batch = await this.requestJson<(number | string)[]>(
         `api.music.yandex.net/artists/${artistId}/track-ids?page=${page}` +
           `&page-size=${pageSize}`
       );
 
-      if (batch.length === 0) break;
+      if (batch.length === 0) {
+        break;
+      }
 
       trackIds.push(...batch.map(trackId => +trackId));
 
-      if (batch.length < pageSize) break;
+      hasMore = batch.length === pageSize;
       page++;
     }
 

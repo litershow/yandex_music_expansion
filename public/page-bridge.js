@@ -1,4 +1,5 @@
 // @ts-nocheck
+/* eslint-env browser */
 (function () {
   if (window.__YMD_PAGE_BRIDGE__) return;
   window.__YMD_PAGE_BRIDGE__ = true;
@@ -25,7 +26,8 @@
         'X-Yandex-Music-Client': YM_CLIENT,
         ...(init && init.body
           ? {
-              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+              'Content-Type':
+                'application/x-www-form-urlencoded; charset=UTF-8',
             }
           : {}),
         ...(init && init.headers ? init.headers : {}),
@@ -42,15 +44,6 @@
     }
 
     return payload && payload.result ? payload.result : payload;
-  };
-
-  const getBestTrackDownloadInfo = downloadInfos => {
-    return downloadInfos
-      .filter(trackInfo => trackInfo.codec === 'mp3')
-      .sort((a, b) => {
-        if (a.preview !== b.preview) return Number(a.preview) - Number(b.preview);
-        return b.bitrateInKbps - a.bitrateInKbps;
-      })[0];
   };
 
   const generateSign = async (secretKey, data) => {

@@ -16,6 +16,7 @@ coverage
 
 #build directory
 build
+release
 
 # visual studio code settings
 .vscode
