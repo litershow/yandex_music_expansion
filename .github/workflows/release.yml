@@ -12,25 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
       
-      - name: Create build folder
-        run: |
-          mkdir build
-          
-          # Копируем только нужные файлы расширения
-          cp manifest.json build/
-          cp background.js build/
-          cp content.js build/
-          cp page-bridge.js build/
-          cp -r view build/
-          cp -r styles build/
-          cp -r images build/
-          
-          # Если есть другие нужные файлы - добавьте их тут
-          # cp your-file.js build/
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
       
-      - name: Create ZIP archive
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build extension
+        run: npm run build
+      
+      - name: Create ZIP from build folder
         run: |
           cd build
           zip -r ../extension.zip .
