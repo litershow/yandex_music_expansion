@@ -10,11 +10,31 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v4
       
+      - name: Create build folder
+        run: |
+          mkdir build
+          
+          # Копируем только нужные файлы расширения
+          cp manifest.json build/
+          cp background.js build/
+          cp content.js build/
+          cp page-bridge.js build/
+          cp -r view build/
+          cp -r styles build/
+          cp -r images build/
+          
+          # Если есть другие нужные файлы - добавьте их тут
+          # cp your-file.js build/
+      
       - name: Create ZIP archive
-        run: zip -r extension.zip . -x "*.git*" ".github/*" ".vscode/*" "*.md"
+        run: |
+          cd build
+          zip -r ../extension.zip .
+          cd ..
       
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
