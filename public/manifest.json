@@ -1,0 +1,90 @@
+{
+  "name": "Yandex Music Downloader",
+  "version": "0.2.1",
+  "author": "Daniil Zhdanovich",
+  "description": "Загружай любимые треки без ограничений с новым расширением для Yandex Music!",
+  "permissions": ["downloads", "storage"],
+  "host_permissions": [
+    "*://music.yandex.by/*",
+    "*://music.yandex.ru/*",
+    "*://music.yandex.ua/*",
+    "*://music.yandex.kz/*",
+    "*://music.yandex.uz/*",
+    "*://music.yandex.com/*",
+    "*://music.yandex.net/*",
+    "*://api.music.yandex.ru/*",
+    "*://api.music.yandex.net/*",
+    "*://next.music.yandex.by/*",
+    "*://next.music.yandex.ru/*",
+    "*://next.music.yandex.ua/*",
+    "*://next.music.yandex.kz/*",
+    "*://next.music.yandex.uz/*",
+    "*://next.music.yandex.com/*",
+    "*://next.music.yandex.net/*",
+    "*://storage.mds.yandex.net/*",
+    "*://*.storage.yandex.net/*",
+    "*://avatars.yandex.net/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://music.yandex.uz/*",
+        "*://music.yandex.by/*",
+        "*://music.yandex.ru/*",
+        "*://music.yandex.ua/*",
+        "*://music.yandex.kz/*",
+        "*://music.yandex.com/*",
+        "*://music.yandex.net/*",
+        "*://next.music.yandex.uz/*",
+        "*://next.music.yandex.by/*",
+        "*://next.music.yandex.ru/*",
+        "*://next.music.yandex.ua/*",
+        "*://next.music.yandex.kz/*",
+        "*://next.music.yandex.com/*",
+        "*://next.music.yandex.net/*"
+      ],
+      "js": ["content.js"],
+      "css": ["styles/content.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["images/icon-dark.svg", "images/icon-light.svg", "page-bridge.js"],
+      "matches": [
+        "*://music.yandex.uz/*",
+        "*://music.yandex.by/*",
+        "*://music.yandex.ru/*",
+        "*://music.yandex.ua/*",
+        "*://music.yandex.kz/*",
+        "*://music.yandex.com/*",
+        "*://music.yandex.net/*",
+        "*://next.music.yandex.uz/*",
+        "*://next.music.yandex.by/*",
+        "*://next.music.yandex.ru/*",
+        "*://next.music.yandex.ua/*",
+        "*://next.music.yandex.kz/*",
+        "*://next.music.yandex.com/*",
+        "*://next.music.yandex.net/*"
+      ]
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "16": "images/inactive-icon.png",
+      "24": "images/inactive-icon.png",
+      "32": "images/inactive-icon.png"
+    },
+    "default_popup": "view/popup.html"
+  },
+  "icons": {
+    "16": "images/logo/logo16.png",
+    "24": "images/logo/logo24.png",
+    "32": "images/logo/logo32.png",
+    "48": "images/logo/logo48.png",
+    "128": "images/logo/logo128.png"
+  },
+  "manifest_version": 3
+}

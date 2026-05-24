@@ -1,0 +1,242 @@
+.YMD-icon{
+  background: 50% no-repeat;
+  background-size: 100%;
+  margin: 6px;
+  width: 28px;
+  height: 28px;
+
+  -webkit-box-flex: 0;
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.player__YMD_icon {
+  display: inline-block;
+}
+
+.sidebar__YMD-button {
+  margin-left: 10px;
+}
+
+.d-track__sidebar:hover .d-track__actions .sidebar__track_YMD-icon {
+  display: inline-block;
+  visibility: visible;
+}
+
+.sidebar__track_YMD-icon {
+  margin: 0px;
+  margin-right: 16px;
+  display: none;
+  width: 24px;
+  height: 24px;
+  opacity: .4;
+  overflow: hidden;
+  vertical-align: top;
+  -webkit-transition: color .2s;
+  transition: color .2s;
+}
+
+.sidebar__track_YMD-icon:hover {
+  opacity: 1.0!important;
+}
+
+.sidebar__YMD-icon {
+  display: inline-block;
+  opacity: .45;
+
+  width: 24px;
+  height: 24px;
+
+  transition-property: opacity, transform, -webkit-transform;
+  transition-duration: 0.1s, 0.1s, 0.1s;
+  transition-timing-function: linear, linear, linear;
+  transition-delay: 0s, 0s, 0s;
+}
+
+.sidebar__YMD-button:hover .sidebar__YMD-icon {
+  opacity: .85!important;   
+}
+
+.page__YMD-icon {
+  display: inline-block;
+  opacity: .45;
+
+  width: 24px;
+  height: 24px;
+
+  transition-property: opacity, transform, -webkit-transform;
+  transition-duration: 0.1s, 0.1s, 0.1s;
+  transition-timing-function: linear, linear, linear;
+  transition-delay: 0s, 0s, 0s;
+}
+
+.page__YMD-button:hover .page__YMD-icon {
+  opacity: .85!important;   
+}
+
+.YMD-icon-dark{
+  background-image: url('chrome-extension://__MSG_@@extension_id__/images/icon-dark.svg');
+}
+.YMD-icon-light{
+  background-image: url('chrome-extension://__MSG_@@extension_id__/images/icon-light.svg');
+}
+
+.YMD-icon-light.sidebar__YMD-icon {
+  opacity: 1.0!important;
+}
+
+.player-controls__track-container{
+  right: 300px!important;
+}
+
+.speed {
+  display: inline-block!important;
+}
+
+.page__track_YMD-icon {
+  margin: 0px;
+  margin-right: 16px;
+  display: none;
+  width: 24px;
+  height: 24px;
+  opacity: .4;
+  overflow: hidden;
+  vertical-align: top;
+  -webkit-transition: color .2s;
+  transition: color .2s;
+}
+
+.d-track:hover .page__track_YMD-icon {
+  display: inline-block;
+}
+
+.page__track_YMD-icon:hover {
+  opacity: 1.0!important;
+}
+
+.page__YMD-button .page__YMD-icon.YMD-icon-light {
+  opacity: 1.0!important;
+}
+
+.YMD-inline-button {
+  align-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  margin-left: 8px;
+  padding: 0;
+  vertical-align: middle;
+}
+
+.YMD-inline-button .YMD-button-icon {
+  height: 18px;
+  margin: 0;
+  opacity: .5;
+  width: 18px;
+}
+
+.YMD-inline-button:hover .YMD-button-icon {
+  opacity: .95;
+}
+
+.YMD-track-action-button {
+  align-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 28px;
+  justify-content: center;
+  margin-right: 4px;
+  min-width: 28px;
+  padding: 0;
+}
+
+.YMD-track-action-button .YMD-button-icon {
+  height: 18px;
+  margin: 0;
+  opacity: .55;
+  width: 18px;
+}
+
+.YMD-track-action-button:hover .YMD-button-icon {
+  opacity: 1;
+}
+
+.YMD-floating-button {
+  align-items: center;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, .92);
+  border: 1px solid rgba(0, 0, 0, .08);
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .14);
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 8px;
+  padding: 10px 14px;
+  position: fixed;
+  right: 24px;
+  z-index: 2147483646;
+}
+
+.YMD-floating-player-button {
+  position: fixed;
+
+  right: 140px;
+  bottom: 90px;
+
+  width: auto !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+
+  padding: 8px 14px;
+
+  border-radius: 999px;
+
+  z-index: 9999;
+
+  flex: 0 0 auto !important;
+}
+
+.YMD-floating-page-button {
+  bottom: 84px;
+}
+
+.YMD-floating-button .YMD-button-icon {
+  height: 20px;
+  margin: 0;
+  width: 20px;
+}
+
+.YMD-button-label {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+body.theme-black .YMD-floating-button,
+body.ym-dark-theme .YMD-floating-button {
+  background: rgba(20, 20, 20, .88);
+  border-color: rgba(255, 255, 255, .12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .4);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .YMD-floating-button {
+    right: 16px;
+  }
+
+  .YMD-floating-player-button {
+    bottom: 16px;
+  }
+
+  .YMD-floating-page-button {
+    bottom: 72px;
+  }
+}
